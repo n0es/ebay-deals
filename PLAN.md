@@ -84,11 +84,17 @@ D:/Projects/ebay-deals/
 
 ## Schema (`supabase/migrations/0001_init.sql`)
 
+All tables live in the `ebay` schema (isolated from `public` which belongs to boopurnoes).
+`PGRST_DB_SCHEMAS` on the Supabase server already includes `ebay` (updated in `.env`, PostgREST restarted).
+The JS client must use `{ db: { schema: 'ebay' } }` or `.schema('ebay')` per-query.
+
 ```sql
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
 
-create table watches (
+create schema if not exists ebay;
+
+create table ebay.watches (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   name text not null,
@@ -102,9 +108,9 @@ create table watches (
   created_at timestamptz default now()
 );
 
-create table listings (
+create table ebay.listings (
   ebay_item_id text primary key,
-  watch_id uuid not null references watches(id) on delete cascade,
+  watch_id uuid not null references ebay.watches(id) on delete cascade,
   title text, url text, image_url text,
   seller_username text, seller_feedback_pct numeric,
   condition text, buying_options text[],
@@ -114,33 +120,38 @@ create table listings (
   first_seen_at timestamptz default now()
 );
 
-create table price_snapshots (
+create table ebay.price_snapshots (
   id bigserial primary key,
-  ebay_item_id text references listings(ebay_item_id) on delete cascade,
+  ebay_item_id text references ebay.listings(ebay_item_id) on delete cascade,
   price numeric, bid_count int,
   captured_at timestamptz default now()
 );
 
-create table deal_scores (
-  ebay_item_id text primary key references listings(ebay_item_id) on delete cascade,
+create table ebay.deal_scores (
+  ebay_item_id text primary key references ebay.listings(ebay_item_id) on delete cascade,
   score int, computed_at timestamptz default now()
 );
 
-create table ebay_token (
+create table ebay.token (
   id int primary key default 1,
   access_token text, expires_at timestamptz
 );
 
--- RLS
-alter table watches enable row level security;
-alter table listings enable row level security;
-alter table price_snapshots enable row level security;
-alter table deal_scores enable row level security;
+-- Grant PostgREST access
+grant usage on schema ebay to anon, authenticated, service_role;
+grant all on all tables in schema ebay to anon, authenticated, service_role;
+grant all on all sequences in schema ebay to anon, authenticated, service_role;
 
-create policy "own watches" on watches for all using (auth.uid() = user_id);
-create policy "own listings" on listings for all
-  using (exists (select 1 from watches w where w.id = listings.watch_id and w.user_id = auth.uid()));
--- analogous policies for snapshots, scores
+-- RLS
+alter table ebay.watches enable row level security;
+alter table ebay.listings enable row level security;
+alter table ebay.price_snapshots enable row level security;
+alter table ebay.deal_scores enable row level security;
+
+create policy "own watches" on ebay.watches for all using (auth.uid() = user_id);
+create policy "own listings" on ebay.listings for all
+  using (exists (select 1 from ebay.watches w where w.id = listings.watch_id and w.user_id = auth.uid()));
+-- analogous policies for price_snapshots, deal_scores
 ```
 
 ## Reusable code from boopurnoes
