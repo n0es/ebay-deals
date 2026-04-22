@@ -1,0 +1,40 @@
+---
+description: eBay deal tracker — product, stack, architecture, and repo layout
+alwaysApply: true
+---
+
+# ebay-deals — overview
+
+Personal app that periodically scans eBay for saved "wants" (keywords, price range, warranty, shipping, buy-now vs auction, result caps), tracks listings over time, and surfaces better deals with a combined score. Bidding stays manual; the app only observes and tracks.
+
+Visual and stack alignment: sibling to `boopurnoes` (Vite, React, palette/CSS variables) where noted in [PLAN.md](PLAN.md). Full detail: [PLAN.md](PLAN.md) (schema, deal formula, `pg_cron`, Edge Function flow).
+
+## Stack (target per PLAN)
+
+- **Frontend:** Vite 8 + React + TypeScript, React Router; vanilla CSS with shared palette (`src/index.css`).
+- **Data/auth:** Supabase (Postgres, Auth, Realtime, Edge Functions); self-hosted instance; single-user for now with RLS on user-owned rows.
+- **Backend (planned):** Express server for SPA hosting and eBay OAuth token proxy/cache.
+- **Jobs:** `pg_cron` → Edge Function `scan-ebay` (eBay Browse API); `pg_net` for HTTP from Postgres.
+- **Tests:** Vitest for shared pure logic (e.g. `shared/dealScore.ts`).
+- **Deploy:** Docker multi-stage; port 3000 in plan.
+
+## High-level data flow (planned)
+
+1. Postgres: `watches`, `listings` (keyed by eBay item id), `price_snapshots`, `deal_scores`, `ebay_token`.
+2. Scheduled scan calls the Edge Function with each active watch; listings upsert, snapshots and scores updated.
+3. Frontend subscribes to Realtime for live updates on listings/scores.
+4. Dashboard: watches, ranked listings, detail with price history (sparkline).
+
+## Current repo layout (evolving)
+
+Scaffold may grow to match [PLAN.md](PLAN.md). Typical shape:
+
+- Root `package.json`, `vite.config.ts`, `index.html`, `src/` — Vite app.
+- `PLAN.md` — canonical spec for migrations, `supabase/`, `server/`, `shared/` as they are added.
+- `supabase/migrations/`, `supabase/functions/` — when present, follow naming and RLS in PLAN.
+
+## User roles (future / RLS-ready)
+
+- Tables are designed for `auth.uid() = user_id` on owned rows; v1 is effectively single-user.
+
+When the tree gains `server/`, `supabase/`, or `shared/`, follow [PLAN.md](PLAN.md) for file placement and public vs Edge-only code.

@@ -1,0 +1,35 @@
+---
+description: package.json versioning, Git branches, commits, and PRs for ebay-deals
+alwaysApply: true
+---
+
+# Versioning and Git workflow
+
+## Versioning
+
+- Bump the **PATCH** version in the **root** `package.json` on every commit that changes the repo (`"version": "0.0.0"` → next patch), unless the user asks otherwise.
+- Edit the `"version"` field directly — do not rely on `npm version` for routine bumps unless the user prefers it.
+- Include the `package.json` version bump in the **same commit** as the code change.
+- Put the new version in commit messages and PR descriptions when you touch the version.
+- **MINOR** (and **MAJOR**) bumps only when the user explicitly wants a release-style bump or when project policy changes.
+
+> Note: This repo’s app lives at the monorepo root, not in `web/`. The archive under `agent-rules-old/` referred to a different layout (`web/package.json`).
+
+## Branching and PRs
+
+- Do **not** push feature work directly to `main` unless the user says otherwise. Use a feature branch (e.g. `feat/…`, `fix/…`).
+- Open a **pull request** into `main` for merge-ready work; keep PRs focused (one feature or fix per PR when practical).
+- Commit at natural checkpoints: one coherent change per commit, not one commit per file or one huge dump at the end of a session.
+- Push the branch after commits so the PR stays current.
+
+## Coding agents (Claude, Cursor, Gemini, etc.)
+
+When a task is **complete** (implemented and verified as far as the environment allows), unless the user only asked for local changes:
+
+1. Work on a **feature branch**, not `main`.
+2. Bump **root `package.json`** PATCH in the **same commit** as the code change.
+3. **Commit** with a clear message; include the version (e.g. `Bump to 0.0.1 — add watch list UI`).
+4. **Push** the branch to `origin`.
+5. **Open or update a PR** into `main` (e.g. `gh pr create --base main`). Do not open duplicate PRs for the same branch.
+
+If the user explicitly asks for **local-only** commits, skip push and PR unless they also request them.

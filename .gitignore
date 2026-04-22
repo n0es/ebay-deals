@@ -31,5 +31,27 @@ dist-server/
 .env.local
 .env.*.local
 
-# Supabase local config
+# Supabase local config & secrets
 supabase/.temp/
+supabase/.env
+supabase/.branches
+
+# TypeScript / tooling caches
+*.tsbuildinfo
+.eslintcache
+.cache/
+.parcel-cache/
+.turbo/
+
+# Tests & coverage
+coverage/
+.nyc_output/
+*.lcov
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Local archive of unrelated project rules (optional copy; not part of this app)
+agent-rules-old/

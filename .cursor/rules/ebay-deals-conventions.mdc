@@ -1,0 +1,33 @@
+---
+description: Supabase, env, eBay API, and database conventions for ebay-deals
+alwaysApply: true
+---
+
+# Conventions — Supabase, env, eBay
+
+## Database and Supabase
+
+- **Schema** for v1 is defined in [PLAN.md](PLAN.md) (`watches`, `listings`, `price_snapshots`, `deal_scores`, `ebay_token`). Do not rename tables in migrations without updating PLAN and the app.
+- **RLS:** Enable on all user-facing tables. Policies use `auth.uid() = user_id` (or `exists` through `watches` for child rows) as in PLAN — no broad `anon` access to private data.
+- **Service role:** Server/Edge use service role only where necessary; the browser client uses the anon key and RLS.
+- Migrations live under `supabase/migrations/` when that folder exists; keep them idempotent and ordered.
+
+## Environment variables
+
+- **Client:** Only `VITE_*` (and any future public prefixes) in Vite. Never put secrets in `VITE_` variables.
+- **Server / Edge / Docker:** eBay client id/secret, token storage, and Supabase service keys belong in server or hosting env, not in the client bundle. Match whatever `.env.example` the repo provides once added.
+- Do not commit real `.env` files; use documented placeholders in README or `.env.example` when you add them.
+
+## eBay API
+
+- **Browse API** (item search) with app-level OAuth (client credentials). Tokens cached in Postgres per PLAN (`ebay_token`); refresh in Edge or server, not in the browser.
+- Respect rate limits (PLAN: ~5k calls/day on free tier); design scans to stay under budget (watch count × runs per day).
+
+## Code style
+
+- TypeScript across app and server when `server/` exists; shared pure functions in `shared/` for FE + Edge as in PLAN.
+- Reuse auth and Supabase client patterns from boopurnoes when copying [PLAN.md](PLAN.md) “reusable code” — adapt env var names to this app.
+
+## Living notes
+
+- Prefer updating [PLAN.md](PLAN.md) for spec-level changes. Add a root `NOTES.md` for operational one-offs (deployment URLs, manual migration steps) if they clutter PLAN.
